@@ -87,6 +87,21 @@ force facebook graph availability.
 a page being loaded as a canvas inside Facebook.
 
 
+Facebook/CSRF middleware:
+------------------------
+
+Another middleware class included in ``django_facebook`` is ``FacebookCSRFMiddleware``.
+Purpose of that middleware class is to skip CSRF validation (that would
+otherwise fail) upon successful validation of signed request.
+
+This is needed since all the signed requests received inside canvas
+are passed via POST.
+
+To use this middleware, simply add this to your MIDDLEWARE_CLASSES,
+just before ``'django.middleware.csrf.CsrfViewMiddleware'``:
+    'django_facebook.middleware.FacebookCSRFMiddleware'
+
+
 Authentication:
 --------------
 This provides seamless integration with the Django user system.
