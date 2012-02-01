@@ -61,6 +61,17 @@ class FacebookDebugTokenMiddleware(object):
         request.facebook = DjangoFacebook(user)
         return None
 
+class FacebookCSRFMiddleware(object):
+    """Skip CSRF processing if there is a valid signed request.
+    
+    To be placed before ``django.middleware.csrf.CsrfViewMiddleware``
+    """
+    def process_request(self, request):
+        if request.POST.get('signed_request'):
+            signed_request = request.POST["signed_request"]
+            data = facebook.parse_signed_request(signed_request, settings.FACEBOOK_SECRET_KEY)
+            if data:
+                request.csrf_processing_done = True
 
 class FacebookMiddleware(object):
     """
