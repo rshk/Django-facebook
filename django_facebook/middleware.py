@@ -2,13 +2,19 @@ from django.conf import settings
 from django.contrib import auth
 import facebook
 import datetime
-
+from django_facebook import django_fbapi
+import logging
+logger = logging.getLogger(__name__)
 
 class DjangoFacebook(object):
     """ Simple accessor object for the Facebook user. """
     def __init__(self, user):
         self.user = user
         self.uid = user['uid']
+#        if getattr(settings, 'FACEBOOK_REQUESTS_CACHE_ENABLE', False):
+#            self.graph = django_fbapi.CachingGraphAPI(user['access_token'])
+#        else:
+#            self.graph = facebook.GraphAPI(user['access_token'])
         self.graph = facebook.GraphAPI(user['access_token'])
 
 
@@ -123,9 +129,11 @@ class FacebookMiddleware(object):
         fb_user = None
         methods = ['get_fb_user_cookie', 'get_fb_user_canvas']
         for method in methods:
+            logging.debug("-- Trying to find user with %s" % method)
             fb_user = getattr(self, method)(request)
             if (fb_user):
                 break
+        logging.debug("-- Found user: %r" % fb_user)
         return fb_user
 
     def process_request(self, request):
@@ -149,9 +157,16 @@ class FacebookMiddleware(object):
         are ephemeral and must be revalidated on every request.
 
         """
+        logger.debug("Running FacebookMiddleware.process_request()")
+        
         fb_user = self.get_fb_user(request)
+        
+        logger.debug("Instantiating request.facebook")
+        
         request.facebook = DjangoFacebook(fb_user) if fb_user else None
-
+        
+        logger.debug("Logging user in")
+        
         if fb_user and request.user.is_anonymous():
             user = auth.authenticate(fb_uid=fb_user['uid'],
                                      fb_graphtoken=fb_user['access_token'])
@@ -159,4 +174,6 @@ class FacebookMiddleware(object):
                 user.last_login = datetime.datetime.now()
                 user.save()
                 request.user = user
+        
+        logger.debug("Execution done: FacebookMiddleware.process_request()")
         return None
