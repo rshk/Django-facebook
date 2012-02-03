@@ -21,6 +21,9 @@ def fb_js_sdk_channel_html(request):
     
     See also: https://developers.facebook.com/docs/reference/javascript/
     """
+    
+    print "---------------------------------------------------------------------------- REQUESTED channel.html"
+    
     from django.utils.dateformat import format
     response = HttpResponse('<script src="//connect.facebook.net/en_US/all.js"></script>')
     cache_expire = datetime.timedelta(days=365)

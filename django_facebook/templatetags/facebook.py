@@ -21,9 +21,8 @@ class FacebookNode(template.Node):
         try:
             app_id = settings.FACEBOOK_APP_ID
         except AttributeError:
-            raise template.TemplateSyntaxError, "%r tag requires " \
-                "FACEBOOK_APP_ID to be configured." \
-                % token.contents.split()[0]
+            raise template.TemplateSyntaxError, "facebook_init tag requires " \
+                "FACEBOOK_APP_ID to be configured."
         self.app_id = app_id
         self.nodelist = nodelist
 
@@ -33,6 +32,7 @@ class FacebookNode(template.Node):
         custom_context = context
         custom_context['code'] = code
         custom_context['app_id'] = self.app_id
+        #custom_context['channel_url'] = request.build_absolute_uri(reversed('django_facebook.views.fb_js_sdk_channel_html'))
         return t.render(context)
 
 
