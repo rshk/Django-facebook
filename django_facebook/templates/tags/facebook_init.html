@@ -2,10 +2,11 @@
 window.fbAsyncInit = function() {
   FB.init({
 	  appId: {{ app_id }},
-	  channelUrl: '{{ protocol_relative_url }}{% url django_facebook.views.fb_js_sdk_channel_html %}',
+	  channelUrl: '{{ absolute_root_url }}{% url django_facebook.views.fb_js_sdk_channel_html %}',
 	  status: true,
 	  cookie: true,
-      xfbml: true});
+      xfbml: true,
+      oauth: true});
   
   {{ code|safe }}
 }
