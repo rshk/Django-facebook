@@ -59,8 +59,8 @@ This module also provides all of the tools necessary for working with facebook
 on the backend:
 
 
-Middleware:
-----------
+FacebookMiddleware:
+------------------
 This provides seamless access to the Facebook Graph via request object.
 
 If a user accesses your site with:
@@ -87,19 +87,15 @@ force facebook graph availability.
 a page being loaded as a canvas inside Facebook.
 
 
-Facebook/CSRF middleware:
+FacebookCanvasMiddleware:
 ------------------------
 
-Another middleware class included in ``django_facebook`` is ``FacebookCSRFMiddleware``.
-Purpose of that middleware class is to skip CSRF validation (that would
-otherwise fail) upon successful validation of signed request.
+Another middleware class included in ``django_facebook``
+is ``FacebookCanvasMiddleware``.
 
-This is needed since all the signed requests received inside canvas
-are passed via POST.
-
-To use this middleware, simply add this to your MIDDLEWARE_CLASSES,
-just before ``'django.middleware.csrf.CsrfViewMiddleware'``:
-    'django_facebook.middleware.FacebookCSRFMiddleware'
+This middleware is especially useful for canvas apps, and it must be placed
+before ``CsrfViewMiddleware`` in order to skip CSRF validation in
+case a valid signed request was received.
 
 
 Authentication:

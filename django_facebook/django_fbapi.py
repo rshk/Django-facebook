@@ -10,11 +10,21 @@ import urllib
 import logging
 logger = logging.getLogger(__name__)
 
-class CachingGraphAPI(facebook.GraphAPI):
-    """GraphAPI alternative with support for caching requests.
+class GraphAPI(facebook.GraphAPI):
+    """Improved version of ``facebook.GraphAPI``, adding support
+    for some django-specific features.
     
-    - We want to cache ONLY "safe" methods: GET|HEAD|OPTIONS
-    - The cache key is built on: access_token|path|args
+    **Caching**
+    
+    Cache support is added by setting ``FACEBOOK_REQUESTS_CACHE_ENABLE = True``
+    in settings.
+    
+    By default, this uses the `default` cache, but you can override that
+    by setting ``FACEBOOK_REQUESTS_CACHE_NAME``.
+    
+    .. NOTE::
+        - We want to cache ONLY "safe" methods: ``GET``, ``HEAD``, ``OPTIONS``
+        - The cache key is built on: ``access_token`` + ``path`` + ``args``
     """
     
     def request(self, path, args=None, post_args=None):

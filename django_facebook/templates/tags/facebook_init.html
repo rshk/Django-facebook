@@ -1,7 +1,11 @@
 <script>
 window.fbAsyncInit = function() {
-  FB.init({appId: {{ app_id }}, status: true, cookie: true, oauth: true,
-           xfbml: true});
+  FB.init({
+	  appId: {{ app_id }},
+	  status: true,
+	  cookie: true,
+	  oauth: true,
+      xfbml: true});
   
   {{ code|safe }}
 }

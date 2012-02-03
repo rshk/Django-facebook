@@ -2,20 +2,57 @@ from django.conf import settings
 from django.contrib import auth
 import facebook
 import datetime
-from django_facebook import django_fbapi
 import logging
+from django.contrib.auth.models import User
+from django.contrib.auth import login
 logger = logging.getLogger(__name__)
 
+from django_facebook import django_fbapi
+
 class DjangoFacebook(object):
-    """ Simple accessor object for the Facebook user. """
+    """ Simple accessor object for the Facebook user."""
     def __init__(self, user):
-        self.user = user
-        self.uid = user['uid']
-#        if getattr(settings, 'FACEBOOK_REQUESTS_CACHE_ENABLE', False):
-#            self.graph = django_fbapi.CachingGraphAPI(user['access_token'])
-#        else:
-#            self.graph = facebook.GraphAPI(user['access_token'])
-        self.graph = facebook.GraphAPI(user['access_token'])
+        self._fb_user = user
+        self._access_token = user['access_token']
+        self._graph = None
+        self._auth_user = None
+        #self.graph = facebook.GraphAPI(user['access_token'])
+    
+    @property
+    def user(self):
+        return self._fb_user
+    
+    @property
+    def uid(self):
+        return self._fb_user['uid']
+    
+    @property
+    def access_token(self):
+        return self._access_token
+    
+    @property
+    def graph(self):
+        """Property used to access GraphAPI connector in "lazy mode"
+        """
+        if not self._graph:
+            self._graph = facebook.GraphAPI(self.access_token)
+        return self._graph
+    
+    @property
+    def auth_user(self):
+        """Property to access the standard user associated with
+        this Facebook user.
+        """
+        if not self._auth_user:
+            self._auth_user = User.objects.get(username=self.uid)
+        return self._auth_user
+    
+    @property
+    def facebook_user(self):
+        return self.graph.get_object('me')
+    
+    def is_canvas(self):
+        return self.user.get('method') == 'canvas'
 
 
 class FacebookDebugCanvasMiddleware(object):
@@ -67,8 +104,8 @@ class FacebookDebugTokenMiddleware(object):
         request.facebook = DjangoFacebook(user)
         return None
 
-class FacebookCSRFMiddleware(object):
-    """Skip CSRF processing if there is a valid signed request.
+class FacebookCanvasMiddleware(object):
+    """Middleware for canvas apps.
     
     To be placed before ``django.middleware.csrf.CsrfViewMiddleware``
     """
@@ -156,24 +193,27 @@ class FacebookMiddleware(object):
         The user however is not "logged in" via login() as facebook sessions
         are ephemeral and must be revalidated on every request.
 
+        However, by specifying ``FACEBOOK_LOGIN_ON_SIGNED_REQUEST = True``,
+        you can force login upon signed request.
         """
         logger.debug("Running FacebookMiddleware.process_request()")
         
         fb_user = self.get_fb_user(request)
-        
-        logger.debug("Instantiating request.facebook")
-        
         request.facebook = DjangoFacebook(fb_user) if fb_user else None
         
-        logger.debug("Logging user in")
-        
         if fb_user and request.user.is_anonymous():
+            
+            logger.debug("Logging user in: %r" % fb_user)
+            
             user = auth.authenticate(fb_uid=fb_user['uid'],
                                      fb_graphtoken=fb_user['access_token'])
             if user:
-                user.last_login = datetime.datetime.now()
-                user.save()
-                request.user = user
+                if getattr(settings, 'FACEBOOK_LOGIN_ON_SIGNED_REQUEST', False):
+                    login(request, user)
+                else:
+                    user.last_login = datetime.datetime.now()
+                    user.save()
+                    request.user = user
         
         logger.debug("Execution done: FacebookMiddleware.process_request()")
         return None
